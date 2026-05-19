@@ -33,7 +33,7 @@ jobs:
       - name: Run pylint and collect score
         continue-on-error: true
         run: |
-          python -m pylint . --exit-zero --score=y > qa-pylint-report.txt
+          python -m pylint $(git ls-files '*.py') tests --exit-zero --score=y > qa-pylint-report.txt
 
       - name: Create QA summary
         if: always()
@@ -71,5 +71,10 @@ jobs:
         if: always()
         run: |
           SCORE=$(grep -oP 'Your code has been rated at \K[0-9\.]+' qa-pylint-report.txt || echo "Unavailable")
+          
+          if [ -z "$SCORE" ]; then
+            SCORE="Unavailable"
+          fi
+
           echo "### Pylint Results" >> $GITHUB_STEP_SUMMARY
           echo "- Score: $SCORE / 10" >> $GITHUB_STEP_SUMMARY
