@@ -33,7 +33,7 @@ jobs:
       - name: Run pylint and collect score
         continue-on-error: true
         run: |
-          python -m pylint $(git ls-files '*.py') tests --exit-zero --score=y > qa-pylint-report.txt
+          python -m pylint $(git ls-files '*.py') --exit-zero --score=y > qa-pylint-report.txt
 
       - name: Create QA summary
         if: always()
