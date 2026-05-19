@@ -16,3 +16,9 @@ variable "schedule_expression" {
   default     = "cron(0/5 * * * ? *)"
 }
 
+variable "s3_name" {
+  description = "Name of the S3 bucket."
+  type        = string
+  default     = "c23-smearbot-caching-bucket"
+}
+
