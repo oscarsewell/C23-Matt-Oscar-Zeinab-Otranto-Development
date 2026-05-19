@@ -12,5 +12,7 @@ I am a **[type of user]**
 I want to be able to **[thing to do]**
 So that I can **[reason for thing]**
 
-## Deliverables 
-What do we need to create to resolve this issue?
+## Acceptance criteria
+
+- [Main features needed (all necessary detail for someone to pick up the issue with limited prior knowledge) can split into multiple bullets]
+- [Testing coverage % etc. (if testable)]
