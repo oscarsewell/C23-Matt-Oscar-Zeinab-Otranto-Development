@@ -4,6 +4,14 @@ from datetime import datetime
 import re
 
 
+def scrape_articles(urls):
+    articles = []
+    for url in urls:
+        article_data = scrape_article(url)
+        articles.append(article_data)
+    return articles
+
+
 def fetch_html(url):
 
     headers = {
@@ -67,7 +75,7 @@ def extract_author(soup, source):
                 if (text and text.lower() != "by" and "reporter" not in text.lower()):
                     return [text]
 
-    if source == "The Guardian":
+    elif source == "The Guardian":
         authors = soup.find_all("a", rel="author")
 
         if authors:
@@ -77,7 +85,7 @@ def extract_author(soup, source):
                 if author.get_text(strip=True)
             ]
 
-    return None
+    return []
 
 
 def extract_publish_date(soup, source):
@@ -95,9 +103,12 @@ def extract_publish_date(soup, source):
             if span:
                 raw_date = span.get_text(strip=True)
 
-                formatted_date = datetime.strptime(
-                    raw_date, "%a %d %b %Y %H.%M BST")
-                return formatted_date.isoformat()
+                try:
+                    formatted_date = datetime.strptime(
+                        raw_date, "%a %d %b %Y %H.%M BST")
+                    return formatted_date.isoformat()
+                except ValueError:
+                    return raw_date
 
     return None
 
@@ -139,28 +150,9 @@ def scrape_article(url):
     return article_data
 
 
-def scrape_articles(urls):
-    articles = []
-    for url in urls:
-        article_data = scrape_article(url)
-        articles.append(article_data)
-    return articles
-
-
 def detect_source(url):
     if "bbc.co.uk" in url or "bbc.com" in url:
         return "BBC News"
     if "theguardian.com" in url:
         return "The Guardian"
     return "Unknown"
-
-
-if __name__ == "__main__":
-    # Example usage
-    # urls = ["https://www.bbc.co.uk/news/articles/c4g0e0p4p2go",
-    #         "https://www.bbc.co.uk/sport/football/articles/ce3pwrrnvd6o", "https://www.theguardian.com/politics/2026/may/20/uk-relaxes-strict-sanctions-on-russian-crude-oil"]
-
-    # urls = ["https://www.bbc.co.uk/news/articles/c4g0e0p4p2go"]
-    urls = ["https://www.theguardian.com/politics/2026/may/20/uk-relaxes-strict-sanctions-on-russian-crude-oil"]
-    articles = scrape_articles(urls)
-    print(articles)
