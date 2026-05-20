@@ -22,3 +22,8 @@ variable "s3_name" {
   default     = "c23-smearbot-caching-bucket"
 }
 
+variable "dynamodb_table_name" {
+  description = "Name of the DynamoDB table."
+  type        = string
+  default     = "c23-smearbot-dynamodb-table"
+}
