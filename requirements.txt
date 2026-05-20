@@ -4,3 +4,5 @@ pytest-json-report
 BeautifulSoup
 requests
 bs4
+python-dotenv
+feedparser
