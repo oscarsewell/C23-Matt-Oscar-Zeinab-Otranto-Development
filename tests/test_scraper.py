@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
 from scraping.scraper import (
     detect_source,
-    fetch_html,
     extract_title,
     extract_description,
     extract_author,

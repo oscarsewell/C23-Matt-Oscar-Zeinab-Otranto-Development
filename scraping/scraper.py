@@ -1,10 +1,12 @@
+"""Scraper for extracting article data from news websites"""
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import re
 
 
-def scrape_articles(urls):
+def scrape_articles(urls: list[str]) -> list[dict]:
+    """Scrapes a list of article URLs and returns a list of dictionaries containing the article data"""
     articles = []
     for url in urls:
         article_data = scrape_article(url)
@@ -12,8 +14,8 @@ def scrape_articles(urls):
     return articles
 
 
-def fetch_html(url):
-
+def fetch_html(url: str) -> BeautifulSoup:
+    """Fetches the HTML content of a given URL and returns a BeautifulSoup object"""
     headers = {
         "User-Agent": (
             "Mozilla/5.0 "
@@ -31,7 +33,8 @@ def fetch_html(url):
     return soup
 
 
-def extract_title(soup):
+def extract_title(soup: BeautifulSoup) -> str | None:
+    """Extracts the title of an article from a BeautifulSoup object"""
     title = soup.find("meta", property="og:title")
 
     if title:
@@ -43,7 +46,8 @@ def extract_title(soup):
     return None
 
 
-def extract_description(soup):
+def extract_description(soup: BeautifulSoup) -> str | None:
+    """Extracts the description of an article from a BeautifulSoup object"""
     description = soup.find("meta", property="og:description")
 
     if description:
@@ -57,7 +61,8 @@ def extract_description(soup):
     return None
 
 
-def extract_author(soup, source):
+def extract_author(soup: BeautifulSoup, source: str) -> list[str]:
+    """Extracts the author(s) of an article from a BeautifulSoup object based on the source"""
 
     if source == "BBC News":
         byline = soup.find(
@@ -88,7 +93,8 @@ def extract_author(soup, source):
     return []
 
 
-def extract_publish_date(soup, source):
+def extract_publish_date(soup: BeautifulSoup, source: str) -> str | None:
+    """Extracts the publish date of an article from a BeautifulSoup object based on the source"""
     if source == "BBC News":
         timestamp = soup.find("time", attrs={"data-testid": "timestamp"})
 
@@ -113,7 +119,8 @@ def extract_publish_date(soup, source):
     return None
 
 
-def extract_body_text(soup):
+def extract_body_text(soup: BeautifulSoup) -> str | None:
+    """Extracts the body text of an article from a BeautifulSoup object"""
     article = soup.find("article")
 
     if not article:
@@ -133,7 +140,8 @@ def extract_body_text(soup):
     return "\n\n".join(text_parts)
 
 
-def scrape_article(url):
+def scrape_article(url: str) -> dict:
+    """Scrapes a single article URL and returns a dictionary containing the article data"""
     soup = fetch_html(url)
     source = detect_source(url)
 
@@ -150,7 +158,8 @@ def scrape_article(url):
     return article_data
 
 
-def detect_source(url):
+def detect_source(url: str) -> str:
+    """Detects the source of an article based on its URL"""
     if "bbc.co.uk" in url or "bbc.com" in url:
         return "BBC News"
     if "theguardian.com" in url:
