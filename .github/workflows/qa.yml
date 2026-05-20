@@ -27,8 +27,10 @@ jobs:
 
       - name: Run pytest and collect results
         continue-on-error: true
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
-          python -m pytest --json-report --json-report-file=qa-pytest-report.json
+          python -m pytest . --json-report --json-report-file=qa-pytest-report.json
 
       - name: Run pylint and collect score
         continue-on-error: true
