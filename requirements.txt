@@ -2,3 +2,5 @@ pytest
 pylint
 pytest-json-report
 BeautifulSoup
+requests
+bs4
