@@ -4,7 +4,7 @@ import openai as oa
 from dotenv import load_dotenv
 import boto3
 
-from enrichment.enrichment_and_upload import (
+from enrichment_and_upload import (
     get_llm_client,
     analyze_text,
     validate_enriched_data,
