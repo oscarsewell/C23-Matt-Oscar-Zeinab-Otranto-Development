@@ -4,7 +4,7 @@ import pytest
 from decimal import Decimal
 from unittest.mock import MagicMock, patch, call
 
-from enrichment.enrichment_and_upload import (
+from enrichment_and_upload import (
     get_llm_client,
     analyze_text,
     validate_enriched_data,
@@ -43,7 +43,7 @@ VALID_ARTICLE_DATA = {
 
 class TestGetLlmClient:
 
-    @patch("chat_gpt_enrichment.oa.OpenAI")
+    @patch("enrichment_and_upload.oa.OpenAI")
     @patch.dict(os.environ, {"OPENAI_API_KEY": "test-api-key"})
     def test_returns_openai_client(self, mock_openai):
         mock_client = MagicMock()
@@ -54,7 +54,7 @@ class TestGetLlmClient:
         mock_openai.assert_called_once_with(api_key="test-api-key")
         assert result is mock_client
 
-    @patch("chat_gpt_enrichment.oa.OpenAI")
+    @patch("enrichment_and_upload.oa.OpenAI")
     @patch.dict(os.environ, {}, clear=True)
     def test_missing_api_key_passes_none(self, mock_openai):
         """os.getenv returns None when key absent; client init receives None."""
@@ -62,7 +62,7 @@ class TestGetLlmClient:
         get_llm_client()
         mock_openai.assert_called_once_with(api_key=None)
 
-    @patch("chat_gpt_enrichment.oa.OpenAI", side_effect=Exception("Auth error"))
+    @patch("enrichment_and_upload.oa.OpenAI", side_effect=Exception("Auth error"))
     @patch.dict(os.environ, {"OPENAI_API_KEY": "bad-key"})
     def test_raises_on_client_init_failure(self, mock_openai):
         with pytest.raises(Exception, match="Auth error"):
@@ -278,22 +278,22 @@ class TestGetDynamodbItems:
     def test_item_contains_all_expected_keys(self):
         result = get_dynamodb_items(VALID_ENRICHED_DATA, VALID_ARTICLE_DATA)
         expected_keys = {
-            "subject", "published_at_article_url", "sentiment_score",
+            "subject_name", "published_at_article_url", "sentiment_score",
             "sentiment_classification", "justification", "keywords",
-            "article_title", "article_url", "authors", "body", "description"
+            "article_title", "article_url", "authors", "published_at"
         }
         for item in result:
             assert expected_keys == set(item.keys())
 
     def test_subject_name_correct(self):
         result = get_dynamodb_items(VALID_ENRICHED_DATA, VALID_ARTICLE_DATA)
-        subjects = [item["subject"] for item in result]
+        subjects = [item["subject_name"] for item in result]
         assert subjects == VALID_ENRICHED_DATA["subjects"]
 
     def test_published_at_article_url_is_concatenation(self):
         result = get_dynamodb_items(VALID_ENRICHED_DATA, VALID_ARTICLE_DATA)
         expected = VALID_ARTICLE_DATA["published_at"] + \
-            VALID_ARTICLE_DATA["url"]
+            '_' + VALID_ARTICLE_DATA["url"]
         for item in result:
             assert item["published_at_article_url"] == expected
 
@@ -313,8 +313,7 @@ class TestGetDynamodbItems:
             assert item["article_title"] == VALID_ARTICLE_DATA["title"]
             assert item["article_url"] == VALID_ARTICLE_DATA["url"]
             assert item["authors"] == VALID_ARTICLE_DATA["authors"]
-            assert item["body"] == VALID_ARTICLE_DATA["body"]
-            assert item["description"] == VALID_ARTICLE_DATA["description"]
+            assert item["published_at"] == VALID_ARTICLE_DATA["published_at"]
 
     def test_empty_subjects_returns_empty_list(self):
         data = {**VALID_ENRICHED_DATA, "subjects": []}
@@ -325,7 +324,7 @@ class TestGetDynamodbItems:
         data = {**VALID_ENRICHED_DATA, "subjects": ["Apple Inc."]}
         result = get_dynamodb_items(data, VALID_ARTICLE_DATA)
         assert len(result) == 1
-        assert result[0]["subject"] == "Apple Inc."
+        assert result[0]["subject_name"] == "Apple Inc."
 
     def test_keywords_propagated_correctly(self):
         result = get_dynamodb_items(VALID_ENRICHED_DATA, VALID_ARTICLE_DATA)
@@ -352,7 +351,7 @@ class TestUploadToDynamodb:
         return get_dynamodb_items(VALID_ENRICHED_DATA, VALID_ARTICLE_DATA)
 
     @patch.dict(os.environ, {"DYNAMODB_TABLE_NAME": "test-table"})
-    @patch("chat_gpt_enrichment.boto3.resource")
+    @patch("enrichment_and_upload.boto3.resource")
     def test_uploads_all_items(self, mock_boto3_resource):
         mock_table = MagicMock()
         mock_batch = MagicMock()
@@ -368,7 +367,7 @@ class TestUploadToDynamodb:
         assert mock_batch.put_item.call_count == len(items)
 
     @patch.dict(os.environ, {"DYNAMODB_TABLE_NAME": "test-table"})
-    @patch("chat_gpt_enrichment.boto3.resource")
+    @patch("enrichment_and_upload.boto3.resource")
     def test_uses_correct_table_name(self, mock_boto3_resource):
         mock_table = MagicMock()
         mock_table.batch_writer.return_value.__enter__ = MagicMock(
@@ -383,7 +382,7 @@ class TestUploadToDynamodb:
         mock_dynamodb.Table.assert_called_once_with("test-table")
 
     @patch.dict(os.environ, {"DYNAMODB_TABLE_NAME": "test-table"})
-    @patch("chat_gpt_enrichment.boto3.resource")
+    @patch("enrichment_and_upload.boto3.resource")
     def test_each_item_passed_to_put_item(self, mock_boto3_resource):
         mock_table = MagicMock()
         mock_batch = MagicMock()
@@ -401,7 +400,7 @@ class TestUploadToDynamodb:
             assert item in put_calls
 
     @patch.dict(os.environ, {"DYNAMODB_TABLE_NAME": "test-table"})
-    @patch("chat_gpt_enrichment.boto3.resource")
+    @patch("enrichment_and_upload.boto3.resource")
     def test_empty_items_list_does_not_call_put_item(self, mock_boto3_resource):
         mock_table = MagicMock()
         mock_batch = MagicMock()
@@ -416,13 +415,13 @@ class TestUploadToDynamodb:
         mock_batch.put_item.assert_not_called()
 
     @patch.dict(os.environ, {"DYNAMODB_TABLE_NAME": "test-table"})
-    @patch("chat_gpt_enrichment.boto3.resource", side_effect=Exception("DynamoDB connection error"))
+    @patch("enrichment_and_upload.boto3.resource", side_effect=Exception("DynamoDB connection error"))
     def test_raises_on_dynamodb_connection_error(self, mock_boto3_resource):
         with pytest.raises(Exception, match="DynamoDB connection error"):
             upload_to_dynamodb(self._make_items())
 
     @patch.dict(os.environ, {"DYNAMODB_TABLE_NAME": "test-table"})
-    @patch("chat_gpt_enrichment.boto3.resource")
+    @patch("enrichment_and_upload.boto3.resource")
     def test_raises_on_put_item_failure(self, mock_boto3_resource):
         mock_table = MagicMock()
         mock_batch = MagicMock()

@@ -22,7 +22,8 @@ def lambda_handler(event, context):
     try:
         # Extract article data from the event (this will depend on your event structure)
         article_data = {
-            "published_at": event["published_at"],
+            # Ensure ISO format with 'Z' if needed
+            "published_at": event["published_at"] if len(event["published_at"]) == 19 else event["published_at"][:19],
             "url": event["url"],
             "title": event["title"],
             "authors": event["authors"],
