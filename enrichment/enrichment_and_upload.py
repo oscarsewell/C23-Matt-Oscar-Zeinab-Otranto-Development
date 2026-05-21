@@ -148,19 +148,20 @@ def upload_to_dynamodb(articles_data: list[dict]):
 # This is just a test function to demonstrate how the above functions can be used together. In production, you would replace the sample text and article data with real data from your application.
 
 
-# if __name__ == "__main__":
-#     sample_text = "Apple Inc. reported a 20% increase in revenue this quarter, which is fantastic news for the company, its CEO Barry Madeupsman and its shareholders."
-#     client = get_llm_client()
-#     analysis_result = analyze_text(client, sample_text)
-#     if not validate_enriched_data(analysis_result):
-#         logger.error("Enriched data validation failed.")
-#     else:
-#         dynamo_items = get_dynamodb_items(analysis_result, {
-#             "published_at": "2024-01-01T00:00:00Z",
-#             "url": "https://example.com/article",
-#             "title": "Apple's Revenue Soars",
-#             "authors": ["Jane Doe"],
-#             "body": "Apple Inc. reported a 20% increase in revenue this quarter, which is fantastic news for the company, its CEO Barry Madeupsman and its shareholders.",
-#             "description": "Apple Inc. has seen a significant increase in revenue this quarter, driven by strong sales of its latest products."
-#         })
-#         print(dynamo_items)
+if __name__ == "__main__":
+    sample_text = "Apple Inc. reported a 20% increase in revenue this quarter, which is fantastic news for the company, its CEO Barry Madeupsman and its shareholders."
+    client = get_llm_client()
+    analysis_result = analyze_text(client, sample_text)
+    if not validate_enriched_data(analysis_result):
+        logger.error("Enriched data validation failed.")
+    else:
+        dynamo_items = get_dynamodb_items(analysis_result, {
+            "published_at": "2024-01-01T00:00:00Z",
+            "url": "https://example.com/article",
+            "title": "Apple's Revenue Soars",
+            "authors": ["Jane Doe"],
+            "body": "Apple Inc. reported a 20% increase in revenue this quarter, which is fantastic news for the company, its CEO Barry Madeupsman and its shareholders.",
+            "description": "Apple Inc. has seen a significant increase in revenue this quarter, driven by strong sales of its latest products."
+        })
+        # Example of accessing the sentiment score from the first item
+        print(type(dynamo_items[0]['sentiment_score']))
