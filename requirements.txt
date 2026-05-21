@@ -1,3 +1,6 @@
 pytest
 pylint
 pytest-json-report
+openai
+python-dotenv
+boto3
