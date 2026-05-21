@@ -35,7 +35,7 @@ variable "article_scraping_repo_name" {
 }
 
 variable "data_enrichment_repo_name" {
-  description = "ECR repository name for data enrichment Lambda function."
+  description = "Name for data enrichment Lambda function ECR repository."
   type        = string
   default     = "c23-smearbot-data-enrichment"
 }
