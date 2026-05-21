@@ -22,3 +22,21 @@ variable "s3_name" {
   default     = "c23-smearbot-caching-bucket"
 }
 
+variable "rss_extraction_repo_name" {
+  description = "ECR repository name for RSS extraction Lambda function."
+  type        = string
+  default     = "c23-smearbot-rss-extraction"
+}
+
+variable "article_scraping_repo_name" {
+  description = "ECR repository name for article scraping Lambda function."
+  type        = string
+  default     = "c23-smearbot-article-scraping"
+}
+
+variable "data_enrichment_repo_name" {
+  description = "ECR repository name for data enrichment Lambda function."
+  type        = string
+  default     = "c23-smearbot-data-enrichment"
+}
+
