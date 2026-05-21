@@ -29,7 +29,7 @@ variable "rss_extraction_repo_name" {
 }
 
 variable "article_scraping_repo_name" {
-  description = "ECR repository name for article scraping Lambda function."
+  description = "Name for article scraping Lambda function ECR repository."
   type        = string
   default     = "c23-smearbot-article-scraping"
 }
