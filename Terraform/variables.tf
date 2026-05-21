@@ -22,6 +22,24 @@ variable "s3_name" {
   default     = "c23-smearbot-caching-bucket"
 }
 
+variable "rss_extraction_repo_name" {
+  description = "Name for RSS extraction Lambda function ECR repository."
+  type        = string
+  default     = "c23-smearbot-rss-extraction"
+}
+
+variable "article_scraping_repo_name" {
+  description = "Name for article scraping Lambda function ECR repository."
+  type        = string
+  default     = "c23-smearbot-article-scraping"
+}
+
+variable "data_enrichment_repo_name" {
+  description = "Name for data enrichment Lambda function ECR repository."
+  type        = string
+  default     = "c23-smearbot-data-enrichment"
+}
+
 variable "dynamodb_table_name" {
   description = "Name of the DynamoDB table."
   type        = string
