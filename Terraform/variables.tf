@@ -23,7 +23,7 @@ variable "s3_name" {
 }
 
 variable "rss_extraction_repo_name" {
-  description = "ECR repository name for RSS extraction Lambda function."
+  description = "Name for RSS extraction Lambda function ECR repository."
   type        = string
   default     = "c23-smearbot-rss-extraction"
 }
