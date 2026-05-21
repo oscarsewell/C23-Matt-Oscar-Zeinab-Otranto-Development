@@ -4,3 +4,4 @@ pytest-json-report
 openai
 python-dotenv
 boto3
+BeautifulSoup
