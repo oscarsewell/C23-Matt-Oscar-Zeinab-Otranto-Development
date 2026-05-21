@@ -42,11 +42,13 @@ Strictly adhere to the following rules for the data fields:
 """
 
 
-def get_llm_client() -> oa.OpenAI:
-    """Initialize and return the OpenAI client."""
+def get_llm_client(api_key: str) -> oa.OpenAI:
+    """Initialize and return the OpenAI client with the provided API key."""
     logger.info("Initializing OpenAI client.")
     try:
-        client = oa.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        if not api_key:
+            raise ValueError("API key is required to initialize OpenAI client")
+        client = oa.OpenAI(api_key=api_key)
         logger.info("OpenAI client initialized successfully.")
         return client
     except Exception as e:
@@ -59,24 +61,22 @@ def analyze_text(client: oa.OpenAI, text: str) -> dict:
 
     try:
         logger.info("Analyzing article with OpenAI client.")
-        response = client.responses.create(
-            model="gpt-5.4-mini",
-            input=[
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
                 {
-                    "role": "developer",
+                    "role": "system",
                     "content": prompt,
                 },
                 {
-
                     "role": "user",
                     "content": f"This is your text to analyze: {text}"
                 }
             ],
-            reasoning={'effort': 'medium'},
-            max_output_tokens=1000
+            max_tokens=1000
         )
         logger.info("Article analysis completed successfully.")
-        return json.loads(response.output_text)
+        return json.loads(response.choices[0].message.content)
     except Exception as e:
         logger.error(f"Failed to analyze text: {e}")
         raise
@@ -85,7 +85,6 @@ def analyze_text(client: oa.OpenAI, text: str) -> dict:
 def validate_enriched_data(enriched_data: dict) -> bool:
     """Validate the enriched data against the expected structure and types."""
     try:
-        # Validate sentiment_analysis
         sa = enriched_data["sentiment_analysis"]
         if not (0.0 <= sa["score"] <= 5.0):
             return False
@@ -94,19 +93,15 @@ def validate_enriched_data(enriched_data: dict) -> bool:
         if not isinstance(sa["justification"], str):
             return False
 
-        # Validate subjects
         if not isinstance(enriched_data["subjects"], list) or not all(isinstance(s, str) for s in enriched_data["subjects"]):
             return False
 
-        # Validate keywords
         if not isinstance(enriched_data["keywords"], list) or not all(isinstance(k, str) for k in enriched_data["keywords"]):
             return False
 
         return True
     except KeyError:
         return False
-
-# needs confirmation of article data structure (keys for values), but this is the general idea of how to combine the enriched data with the article data for DynamoDB insertion
 
 
 def get_dynamodb_items(enriched_data: dict, article_data: dict) -> list[dict]:
@@ -135,7 +130,10 @@ def upload_to_dynamodb(articles_data: list[dict]):
     try:
         logger.info("Uploading data to DynamoDB.")
         dynamodb = boto3.resource('dynamodb')
-        table = dynamodb.Table(os.getenv("DYNAMODB_TABLE_NAME"))
+        table_name = os.getenv("DYNAMODB_TABLE")
+        if not table_name:
+            raise ValueError("DYNAMODB_TABLE environment variable not set")
+        table = dynamodb.Table(table_name)
         with table.batch_writer() as batch:
             for item in articles_data:
                 batch.put_item(Item=item)
@@ -143,24 +141,3 @@ def upload_to_dynamodb(articles_data: list[dict]):
     except Exception as e:
         logger.error(f"Failed to upload data to DynamoDB: {e}")
         raise
-
-
-# This is just a test function to demonstrate how the above functions can be used together. In production, you would replace the sample text and article data with real data from your application.
-
-
-# if __name__ == "__main__":
-#     sample_text = "Apple Inc. reported a 20% increase in revenue this quarter, which is fantastic news for the company, its CEO Barry Madeupsman and its shareholders."
-#     client = get_llm_client()
-#     analysis_result = analyze_text(client, sample_text)
-#     if not validate_enriched_data(analysis_result):
-#         logger.error("Enriched data validation failed.")
-#     else:
-#         dynamo_items = get_dynamodb_items(analysis_result, {
-#             "published_at": "2024-01-01T00:00:00Z",
-#             "url": "https://example.com/article",
-#             "title": "Apple's Revenue Soars",
-#             "authors": ["Jane Doe"],
-#             "body": "Apple Inc. reported a 20% increase in revenue this quarter, which is fantastic news for the company, its CEO Barry Madeupsman and its shareholders.",
-#             "description": "Apple Inc. has seen a significant increase in revenue this quarter, driven by strong sales of its latest products."
-#         })
-#         print(dynamo_items)
