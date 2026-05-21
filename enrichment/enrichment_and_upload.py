@@ -115,16 +115,15 @@ def get_dynamodb_items(enriched_data: dict, article_data: dict) -> list[dict]:
     for subject in enriched_data["subjects"]:
         item = {
             "subject": subject,
-            "published_at_article_url": article_data["published_at"]+article_data["url"],
+            "published_at_article_url": article_data["published_at"]+'_'+article_data["url"],
             "sentiment_score": Decimal(str(enriched_data["sentiment_analysis"]["score"])),
             "sentiment_classification": enriched_data["sentiment_analysis"]["classification"],
             "justification": enriched_data["sentiment_analysis"]["justification"],
             "keywords": enriched_data.get("keywords"),
             "article_title": article_data["title"],
             "article_url": article_data["url"],
-            "authors": article_data["authors"],
-            "body": article_data["body"],
-            "description": article_data["description"]
+            "authors": article_data["authors"]
+
         }
         items.append(item)
     return items
@@ -145,29 +144,6 @@ def upload_to_dynamodb(items: list[dict]):
         raise
 
 
-def lambda_handler(event, context):
-    """AWS Lambda handler function to process incoming events."""
-    try:
-        # Extract article data from the event (this will depend on your event structure)
-        article_data = {
-            "published_at": event["published_at"],
-            "url": event["url"],
-            "title": event["title"],
-            "authors": event["authors"],
-            "body": event["body"],
-            "description": event["description"]
-        }
-        client = get_llm_client()
-        analysis_result = analyze_text(client, article_data["body"])
-        if not validate_enriched_data(analysis_result):
-            logger.error("Enriched data validation failed.")
-            return {"statusCode": 400, "body": "Invalid enriched data"}
-        dynamo_items = get_dynamodb_items(analysis_result, article_data)
-        upload_to_dynamodb(dynamo_items)
-        return {"statusCode": 200, "body": "Data processed and uploaded successfully"}
-    except Exception as e:
-        logger.error(f"Error processing event: {e}")
-        return {"statusCode": 500, "body": "Internal server error"}
 # This is just a test function to demonstrate how the above functions can be used together. In production, you would replace the sample text and article data with real data from your application.
 
 
