@@ -1,4 +1,9 @@
 pytest
 pylint
 pytest-json-report
-BeautifulSoup
+beautifulsoup4
+requests
+bs4
+python-dotenv
+feedparser
+boto3
