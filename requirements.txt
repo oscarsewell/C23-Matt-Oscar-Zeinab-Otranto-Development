@@ -5,3 +5,8 @@ openai
 python-dotenv
 boto3
 BeautifulSoup
+beautifulsoup4
+requests
+bs4
+feedparser
+
