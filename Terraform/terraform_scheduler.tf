@@ -1,7 +1,4 @@
-provider "aws" {
-  region = "eu-west-2"
-}
-
+# EventBridge Scheduler configuration for triggering Step Function every 5 minutes
 
 data "aws_iam_policy_document" "scheduler_assume_role_policy" {
   statement {
@@ -14,19 +11,18 @@ data "aws_iam_policy_document" "scheduler_assume_role_policy" {
   }
 }
 
-resource "aws_iam_role" "c23-smearbot-scheduler-role" {
+resource "aws_iam_role" "c23_smearbot_scheduler_role" {
   name               = "c23-smearbot-scheduler-role"
   assume_role_policy = data.aws_iam_policy_document.scheduler_assume_role_policy.json
 }
 
-## Additional policies will need to be added to satisfy its true role.
 data "aws_iam_policy_document" "scheduler_start_sfn_policy" {
   statement {
     sid     = "AllowStartExecutionOnTargetStateMachine"
     effect  = "Allow"
     actions = ["states:StartExecution"]
 
-    resources = [var.step_function_arn]
+    resources = [local.step_function_arn]
   }
 }
 
@@ -47,7 +43,7 @@ resource "aws_scheduler_schedule" "c23_smearbot_step_function_schedule" {
   schedule_expression = var.schedule_expression
 
   target {
-    arn      = var.step_function_arn
+    arn      = local.step_function_arn
     role_arn = aws_iam_role.c23_smearbot_scheduler_role.arn
 
     input = jsonencode({
