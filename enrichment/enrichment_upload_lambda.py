@@ -40,10 +40,8 @@ def get_openai_api_key():
 def lambda_handler(event, context):
     """AWS Lambda handler function to process articles from S3."""
     try:
-        # Set OpenAI API key from Secrets Manager
         api_key = get_openai_api_key()
 
-        # Extract S3 bucket and key from the event (directly at root level from Step Function)
         s3_bucket = event.get("s3_bucket")
         s3_key = event.get("s3_key")
 
@@ -58,7 +56,6 @@ def lambda_handler(event, context):
             logger.error(f"Failed to read articles from S3: {str(e)}")
             return {"status": "error", "message": f"Failed to read from S3: {str(e)}"}
 
-        # Ensure articles_data is a list
         if not isinstance(articles_data, list):
             articles_data = [articles_data]
 
@@ -67,10 +64,8 @@ def lambda_handler(event, context):
         client = get_llm_client(api_key)
         all_dynamo_items = []
 
-        # Process each article
         for article in articles_data:
             try:
-                # Ensure required fields exist with defaults
                 article_data = {
                     "published_at": article.get("published_at", "")[:19] if article.get("published_at") else "",
                     "url": article.get("url", ""),
@@ -80,13 +75,11 @@ def lambda_handler(event, context):
                     "description": article.get("description", "") or ""
                 }
 
-                # Skip if missing required fields
                 if not article_data["body"] or not article_data["url"]:
                     logger.warning(
                         f"Skipping article with missing body or URL: {article_data.get('url', 'unknown')}")
                     continue
 
-                # Analyze text
                 analysis_result = analyze_text(client, article_data["body"])
 
                 if not validate_enriched_data(analysis_result):
@@ -94,7 +87,6 @@ def lambda_handler(event, context):
                         f"Validation failed for article: {article_data['url']}")
                     continue
 
-                # Create DynamoDB items
                 dynamo_items = get_dynamodb_items(
                     analysis_result, article_data)
                 if dynamo_items:
@@ -104,7 +96,6 @@ def lambda_handler(event, context):
                 logger.error(f"Error processing article: {str(e)}")
                 continue
 
-        # Upload all items to DynamoDB
         if all_dynamo_items:
             logger.info(f"Uploading {len(all_dynamo_items)} items to DynamoDB")
             upload_to_dynamodb(all_dynamo_items)
