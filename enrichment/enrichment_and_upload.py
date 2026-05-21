@@ -114,7 +114,7 @@ def get_dynamodb_items(enriched_data: dict, article_data: dict) -> list[dict]:
     items = []
     for subject in enriched_data["subjects"]:
         item = {
-            "subject": subject,
+            "subject_name": subject,
             "published_at_article_url": article_data["published_at"]+'_'+article_data["url"],
             "sentiment_score": Decimal(str(enriched_data["sentiment_analysis"]["score"])),
             "sentiment_classification": enriched_data["sentiment_analysis"]["classification"],
@@ -122,21 +122,22 @@ def get_dynamodb_items(enriched_data: dict, article_data: dict) -> list[dict]:
             "keywords": enriched_data.get("keywords"),
             "article_title": article_data["title"],
             "article_url": article_data["url"],
-            "authors": article_data["authors"]
+            "authors": article_data["authors"],
+            "published_at": article_data["published_at"]
 
         }
         items.append(item)
     return items
 
 
-def upload_to_dynamodb(items: list[dict]):
+def upload_to_dynamodb(articles_data: list[dict]):
     """Upload the given items to DynamoDB."""
     try:
         logger.info("Uploading data to DynamoDB.")
         dynamodb = boto3.resource('dynamodb')
         table = dynamodb.Table(os.getenv("DYNAMODB_TABLE_NAME"))
         with table.batch_writer() as batch:
-            for item in items:
+            for item in articles_data:
                 batch.put_item(Item=item)
         logger.info("Data uploaded to DynamoDB successfully.")
     except Exception as e:
