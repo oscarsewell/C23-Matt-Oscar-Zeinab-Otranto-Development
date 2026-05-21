@@ -12,7 +12,7 @@ Python module for extracting story URLs from RSS feeds with S3-based caching and
 
 Build the image:
 ```bash
-docker build -t c23-smearbot-rss-extraction:latest .
+docker buildx build -t c23-smearbot-rss-extraction:latest --provenance=false --platform="linux/amd64" .
 ```
 
 Tag and push to ECR:
