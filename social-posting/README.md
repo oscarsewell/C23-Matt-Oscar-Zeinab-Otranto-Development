@@ -45,7 +45,7 @@ Tag and push to ECR:
 aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin <ACCOUNT_ID>.dkr.ecr.eu-west-2.amazonaws.com
 
 # Tag image for ECR
-docker tag c23-smearbot-blue-sky-poster:latest <ACCOUNT_ID>.dkr.ecr.eu-west-2.amazonaws.com/c23-smearbot-rss-extraction:latest
+docker tag c23-smearbot-blue-sky-poster:latest <ACCOUNT_ID>.dkr.ecr.eu-west-2.amazonaws.com/c23-smearbot-blue-sky-poster:latest
 
 # Push to repository
 docker push <ACCOUNT_ID>.dkr.ecr.eu-west-2.amazonaws.com/c23-smearbot-blue-sky-poster:latest
