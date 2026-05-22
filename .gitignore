@@ -8,3 +8,12 @@ __pycache__/
 .pytest_cache/
 
 .env
+
+# Terraform state files
+*.tfstate
+*.tfstate.backup
+# Terraform variables files
+*.tfvars
+*.tfvars.json
+*.terraform
+*.terraform.lock.hcl

@@ -108,7 +108,6 @@ resource "aws_iam_role_policy" "blue_sky_poster_lambda_policy" {
     ]
   })
 }
-
 resource "aws_lambda_function" "blue_sky_poster" {
   function_name = var.blue_sky_lambda_function_name
   role           = aws_iam_role.blue_sky_poster_lambda_role.arn
@@ -134,3 +133,4 @@ resource "aws_cloudwatch_log_group" "blue_sky_poster_logs" {
   name              = "/aws/lambda/c23-smearbot-blue-sky-poster"
   retention_in_days = 14
 }
+
