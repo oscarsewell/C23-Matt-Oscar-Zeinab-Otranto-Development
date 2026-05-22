@@ -3,7 +3,7 @@ import boto3
 import os
 import logging
 from datetime import datetime
-from scraper import scrape_articles
+from .scraper import scrape_articles
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
