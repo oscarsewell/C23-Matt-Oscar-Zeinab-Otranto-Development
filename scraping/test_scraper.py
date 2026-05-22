@@ -19,9 +19,7 @@ BBC_HTML = """
   <body>
     <article>
       <div data-testid="single-byline">
-        <span>By</span>
-        <span>Rachel Clun</span>
-        <span>Business reporter</span>
+        <span class="TextContributorName">Rachel Clun</span>
       </div>
 
       <time data-testid="timestamp" datetime="2026-05-20T06:13:26.521Z">
@@ -76,6 +74,10 @@ def test_detect_source_returns_guardian_for_guardian_url():
         "https://www.theguardian.com/politics/test") == "The Guardian"
 
 
+def test_detect_source_returns_unknown_for_unknown_url():
+    assert detect_source("https://example.com/article") == "Unknown"
+
+
 def test_extract_bbc_title():
     soup = BeautifulSoup(BBC_HTML, "html.parser")
 
@@ -88,10 +90,79 @@ def test_extract_guardian_title():
     assert extract_title(soup) == "Guardian Test Headline"
 
 
+def test_extract_title_falls_back_to_html_title():
+    html = """
+    <html>
+      <head>
+        <title>Fallback Page Title</title>
+      </head>
+    </html>
+    """
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    assert extract_title(soup) == "Fallback Page Title"
+
+
 def test_extract_bbc_authors_returns_author_list():
     soup = BeautifulSoup(BBC_HTML, "html.parser")
 
     assert extract_author(soup, "BBC News") == ["Rachel Clun"]
+
+
+def test_extract_bbc_authors_ignores_by_label_and_role():
+    html = """
+    <html>
+      <body>
+        <article>
+          <div data-testid="single-byline">
+            <span>By</span>
+            <span class="TextContributorName">Rachel Clun</span>
+            <span>Business reporter</span>
+          </div>
+        </article>
+      </body>
+    </html>
+    """
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    assert extract_author(soup, "BBC News") == ["Rachel Clun"]
+
+
+def test_extract_bbc_authors_returns_multiple_authors():
+    html = """
+    <html>
+      <body>
+        <article>
+          <div data-testid="multi-byline">
+            <span class="TextContributorName">Rachel Clun</span>
+            <span class="TextContributorName">Jane Smith</span>
+          </div>
+        </article>
+      </body>
+    </html>
+    """
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    assert extract_author(soup, "BBC News") == ["Rachel Clun", "Jane Smith"]
+
+
+def test_extract_bbc_authors_returns_empty_list_when_no_byline():
+    html = """
+    <html>
+      <body>
+        <article>
+          <p>No author here.</p>
+        </article>
+      </body>
+    </html>
+    """
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    assert extract_author(soup, "BBC News") == []
 
 
 def test_extract_guardian_authors_returns_multiple_authors():
@@ -133,6 +204,19 @@ def test_extract_guardian_body_text():
     assert "Second Guardian paragraph." in result
 
 
+def test_extract_description_returns_none_when_missing():
+    html = """
+    <html>
+      <head></head>
+      <body></body>
+    </html>
+    """
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    assert extract_description(soup) is None
+
+
 def test_scrape_article_returns_expected_dictionary_for_bbc(monkeypatch):
     def mock_fetch_html(url):
         return BeautifulSoup(BBC_HTML, "html.parser")
@@ -146,7 +230,7 @@ def test_scrape_article_returns_expected_dictionary_for_bbc(monkeypatch):
     assert result["title"] == "BBC Test Headline"
     assert result["authors"] == ["Rachel Clun"]
     assert result["published_at"] == "2026-05-20T06:13:26.521Z"
-    assert "First BBC paragraph." in result["body_text"]
+    assert "First BBC paragraph." in result["body"]
 
 
 def test_scrape_article_returns_expected_dictionary_for_guardian(monkeypatch):
@@ -162,7 +246,7 @@ def test_scrape_article_returns_expected_dictionary_for_guardian(monkeypatch):
     assert result["title"] == "Guardian Test Headline"
     assert result["authors"] == ["Caroline Davies", "Jillian Ambrose"]
     assert result["published_at"] == "2026-05-20T14:20:00"
-    assert "First Guardian paragraph." in result["body_text"]
+    assert "First Guardian paragraph." in result["body"]
 
 
 def test_extract_description_for_bbc():
@@ -203,3 +287,38 @@ def test_scrape_articles_returns_list_of_scraped_articles(monkeypatch):
     assert result[1]["source"] == "The Guardian"
     assert result[1]["title"] == "Guardian Test Headline"
     assert result[1]["description"] == "Guardian test description"
+
+
+def test_extract_body_text_returns_none_when_no_article():
+    html = """
+    <html>
+      <body>
+        <p>Paragraph outside article.</p>
+      </body>
+    </html>
+    """
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    assert extract_body_text(soup) is None
+
+
+def test_extract_guardian_publish_date_returns_raw_string_if_parsing_fails():
+    html = """
+    <html>
+      <body>
+        <details data-gu-name="dateline">
+          <summary>
+            <span>Invalid date format</span>
+          </summary>
+        </details>
+      </body>
+    </html>
+    """
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    assert extract_publish_date(
+        soup,
+        "The Guardian"
+    ) == "Invalid date format"
