@@ -44,29 +44,25 @@ VALID_ARTICLE_DATA = {
 class TestGetLlmClient:
 
     @patch("enrichment_and_upload.oa.OpenAI")
-    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-api-key"})
     def test_returns_openai_client(self, mock_openai):
         mock_client = MagicMock()
         mock_openai.return_value = mock_client
 
-        result = get_llm_client()
+        result = get_llm_client("test-api-key")
 
         mock_openai.assert_called_once_with(api_key="test-api-key")
         assert result is mock_client
 
     @patch("enrichment_and_upload.oa.OpenAI")
-    @patch.dict(os.environ, {}, clear=True)
     def test_missing_api_key_passes_none(self, mock_openai):
-        """os.getenv returns None when key absent; client init receives None."""
-        mock_openai.return_value = MagicMock()
-        get_llm_client()
-        mock_openai.assert_called_once_with(api_key=None)
+        """When None is passed, function raises ValueError."""
+        with pytest.raises(ValueError, match="API key is required"):
+            get_llm_client(None)
 
     @patch("enrichment_and_upload.oa.OpenAI", side_effect=Exception("Auth error"))
-    @patch.dict(os.environ, {"OPENAI_API_KEY": "bad-key"})
     def test_raises_on_client_init_failure(self, mock_openai):
         with pytest.raises(Exception, match="Auth error"):
-            get_llm_client()
+            get_llm_client("bad-key")
 
 
 # ---------------------------------------------------------------------------
@@ -76,11 +72,15 @@ class TestGetLlmClient:
 class TestAnalyzeText:
 
     def _make_client(self, output_text: str) -> MagicMock:
-        """Build a mock OpenAI client whose responses.create returns output_text."""
+        """Build a mock OpenAI client whose chat.completions.create returns output_text."""
+        mock_message = MagicMock()
+        mock_message.content = output_text
+        mock_choice = MagicMock()
+        mock_choice.message = mock_message
         mock_response = MagicMock()
-        mock_response.output_text = output_text
+        mock_response.choices = [mock_choice]
         mock_client = MagicMock()
-        mock_client.responses.create.return_value = mock_response
+        mock_client.chat.completions.create.return_value = mock_response
         return mock_client
 
     def test_returns_parsed_dict_on_valid_response(self):
@@ -98,9 +98,8 @@ class TestAnalyzeText:
 
         analyze_text(client, text)
 
-        _, kwargs = client.responses.create.call_args
-        messages = kwargs.get(
-            "input") or client.responses.create.call_args[1]["input"]
+        _, kwargs = client.chat.completions.create.call_args
+        messages = kwargs.get("messages")
         user_message = next(m for m in messages if m["role"] == "user")
         assert text in user_message["content"]
 
@@ -112,7 +111,8 @@ class TestAnalyzeText:
 
     def test_raises_on_api_error(self):
         mock_client = MagicMock()
-        mock_client.responses.create.side_effect = Exception("API timeout")
+        mock_client.chat.completions.create.side_effect = Exception(
+            "API timeout")
 
         with pytest.raises(Exception, match="API timeout"):
             analyze_text(mock_client, "Some text.")
@@ -350,7 +350,7 @@ class TestUploadToDynamodb:
     def _make_items(self) -> list[dict]:
         return get_dynamodb_items(VALID_ENRICHED_DATA, VALID_ARTICLE_DATA)
 
-    @patch.dict(os.environ, {"DYNAMODB_TABLE_NAME": "test-table"})
+    @patch.dict(os.environ, {"DYNAMODB_TABLE": "test-table"})
     @patch("enrichment_and_upload.boto3.resource")
     def test_uploads_all_items(self, mock_boto3_resource):
         mock_table = MagicMock()
@@ -366,7 +366,7 @@ class TestUploadToDynamodb:
 
         assert mock_batch.put_item.call_count == len(items)
 
-    @patch.dict(os.environ, {"DYNAMODB_TABLE_NAME": "test-table"})
+    @patch.dict(os.environ, {"DYNAMODB_TABLE": "test-table"})
     @patch("enrichment_and_upload.boto3.resource")
     def test_uses_correct_table_name(self, mock_boto3_resource):
         mock_table = MagicMock()
@@ -381,7 +381,7 @@ class TestUploadToDynamodb:
 
         mock_dynamodb.Table.assert_called_once_with("test-table")
 
-    @patch.dict(os.environ, {"DYNAMODB_TABLE_NAME": "test-table"})
+    @patch.dict(os.environ, {"DYNAMODB_TABLE": "test-table"})
     @patch("enrichment_and_upload.boto3.resource")
     def test_each_item_passed_to_put_item(self, mock_boto3_resource):
         mock_table = MagicMock()
@@ -399,7 +399,7 @@ class TestUploadToDynamodb:
         for item in items:
             assert item in put_calls
 
-    @patch.dict(os.environ, {"DYNAMODB_TABLE_NAME": "test-table"})
+    @patch.dict(os.environ, {"DYNAMODB_TABLE": "test-table"})
     @patch("enrichment_and_upload.boto3.resource")
     def test_empty_items_list_does_not_call_put_item(self, mock_boto3_resource):
         mock_table = MagicMock()
@@ -414,13 +414,13 @@ class TestUploadToDynamodb:
 
         mock_batch.put_item.assert_not_called()
 
-    @patch.dict(os.environ, {"DYNAMODB_TABLE_NAME": "test-table"})
+    @patch.dict(os.environ, {"DYNAMODB_TABLE": "test-table"})
     @patch("enrichment_and_upload.boto3.resource", side_effect=Exception("DynamoDB connection error"))
     def test_raises_on_dynamodb_connection_error(self, mock_boto3_resource):
         with pytest.raises(Exception, match="DynamoDB connection error"):
             upload_to_dynamodb(self._make_items())
 
-    @patch.dict(os.environ, {"DYNAMODB_TABLE_NAME": "test-table"})
+    @patch.dict(os.environ, {"DYNAMODB_TABLE": "test-table"})
     @patch("enrichment_and_upload.boto3.resource")
     def test_raises_on_put_item_failure(self, mock_boto3_resource):
         mock_table = MagicMock()

@@ -5,7 +5,8 @@ def test_lambda_handler_returns_400_when_no_urls_provided():
     result = lambda_handler({}, None)
 
     assert result["error"] == "No URLs provided"
-    assert result["articles"] == []
+    assert result["s3_bucket"] == "c23-smearbot-caching-bucket"
+    assert result["articles_count"] == 0
 
 
 def test_lambda_handler_returns_articles(monkeypatch):
@@ -14,14 +15,20 @@ def test_lambda_handler_returns_articles(monkeypatch):
             {"title": "Test Article", "url": urls[0]}
         ]
 
+    def mock_put_object(**kwargs):
+        pass
+
     monkeypatch.setattr(
         "scraping.lambda_function.scrape_articles", mock_scrape_articles)
+    monkeypatch.setattr(
+        "scraping.lambda_function.s3_client.put_object", mock_put_object)
 
     result = lambda_handler(
         {"urls": ["https://www.bbc.co.uk/news/articles/test"]}, None)
 
-    assert result["articles"] == [
-        {"title": "Test Article", "url": "https://www.bbc.co.uk/news/articles/test"}]
+    assert result["articles_count"] == 1
+    assert result["s3_bucket"] == "c23-smearbot-caching-bucket"
+    assert "s3_key" in result
 
 
 def test_lambda_handler_returns_error_when_url_list_empty():
@@ -30,7 +37,7 @@ def test_lambda_handler_returns_error_when_url_list_empty():
     result = lambda_handler(event, None)
 
     assert result["error"] == "No URLs provided"
-    assert result["articles"] == []
+    assert result["articles_count"] == 0
 
 
 def test_lambda_handler_calls_scrape_articles_with_urls(monkeypatch):
@@ -62,13 +69,18 @@ def test_lambda_handler_returns_multiple_articles(monkeypatch):
             {"title": "Article 2", "url": urls[1]},
         ]
 
+    def mock_put_object(**kwargs):
+        pass
+
     monkeypatch.setattr(
         "scraping.lambda_function.scrape_articles",
         mock_scrape_articles
     )
+    monkeypatch.setattr(
+        "scraping.lambda_function.s3_client.put_object", mock_put_object)
 
     result = lambda_handler({"urls": ["url-1", "url-2"]}, None)
 
-    assert len(result["articles"]) == 2
-    assert result["articles"][0]["title"] == "Article 1"
-    assert result["articles"][1]["title"] == "Article 2"
+    assert result["articles_count"] == 2
+    assert result["s3_bucket"] == "c23-smearbot-caching-bucket"
+    assert "s3_key" in result
