@@ -1,6 +1,6 @@
 import logging
 import os
-import openai as oa
+import json
 from dotenv import load_dotenv
 import boto3
 
@@ -16,31 +16,97 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+s3_client = boto3.client('s3')
+secrets_client = boto3.client('secretsmanager', region_name=os.getenv(
+    'SECRETS_MANAGER_REGION', 'eu-west-2'))
+
+
+def get_openai_api_key():
+    """Retrieve OpenAI API key from AWS Secrets Manager."""
+    try:
+        secret_name = os.getenv('SECRETS_MANAGER_SECRET', 'c23-smearbot')
+        response = secrets_client.get_secret_value(SecretId=secret_name)
+        secret_dict = json.loads(response['SecretString'])
+        api_key = secret_dict.get('OPENAI_API_KEY')
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY not found in secret")
+        return api_key
+    except Exception as e:
+        logger.error(
+            f"Failed to retrieve API key from Secrets Manager: {str(e)}")
+        raise
+
 
 def lambda_handler(event, context):
-    """AWS Lambda handler function to process incoming events."""
+    """AWS Lambda handler function to process articles from S3."""
     try:
-        # Extract article data from the event (this will depend on your event structure)
-        article_data = {
-            # Ensure ISO format with 'Z' if needed
-            "published_at": event["published_at"] if len(event["published_at"]) == 19 else event["published_at"][:19],
-            "url": event["url"],
-            "title": event["title"],
-            "authors": event["authors"],
-            "body": event["body"],
-            "description": event["description"]
+        api_key = get_openai_api_key()
+
+        s3_bucket = event.get("s3_bucket")
+        s3_key = event.get("s3_key")
+
+        if not s3_bucket or not s3_key:
+            logger.error(
+                f"Missing s3_bucket or s3_key in event. Event: {json.dumps(event)}")
+        logger.info(f"Reading articles from S3: s3://{s3_bucket}/{s3_key}")
+        try:
+            response = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
+            articles_data = json.loads(response['Body'].read().decode('utf-8'))
+        except Exception as e:
+            logger.error(f"Failed to read articles from S3: {str(e)}")
+            return {"status": "error", "message": f"Failed to read from S3: {str(e)}"}
+
+        if not isinstance(articles_data, list):
+            articles_data = [articles_data]
+
+        logger.info(f"Processing {len(articles_data)} articles")
+
+        client = get_llm_client(api_key)
+        all_dynamo_items = []
+
+        for article in articles_data:
+            try:
+                article_data = {
+                    "published_at": article.get("published_at", "")[:19] if article.get("published_at") else "",
+                    "url": article.get("url", ""),
+                    "title": article.get("title", ""),
+                    "authors": article.get("authors", []) or [],
+                    "body": article.get("body", "") or "",
+                    "description": article.get("description", "") or ""
+                }
+
+                if not article_data["body"] or not article_data["url"]:
+                    logger.warning(
+                        f"Skipping article with missing body or URL: {article_data.get('url', 'unknown')}")
+                    continue
+
+                analysis_result = analyze_text(client, article_data["body"])
+
+                if not validate_enriched_data(analysis_result):
+                    logger.warning(
+                        f"Validation failed for article: {article_data['url']}")
+                    continue
+
+                dynamo_items = get_dynamodb_items(
+                    analysis_result, article_data)
+                if dynamo_items:
+                    all_dynamo_items.extend(dynamo_items)
+
+            except Exception as e:
+                logger.error(f"Error processing article: {str(e)}")
+                continue
+
+        if all_dynamo_items:
+            logger.info(f"Uploading {len(all_dynamo_items)} items to DynamoDB")
+            upload_to_dynamodb(all_dynamo_items)
+
+        return {
+            "status": "success",
+            "message": "Data processed and uploaded successfully",
+            "items_count": len(all_dynamo_items),
+            "articles_processed": len(articles_data)
         }
-        client = get_llm_client()
-        analysis_result = analyze_text(client, article_data["body"])
-        if not validate_enriched_data(analysis_result):
-            logger.error("Enriched data validation failed.")
-            return {"statusCode": 400, "body": "Invalid enriched data"}
-        dynamo_items = get_dynamodb_items(analysis_result, article_data)
-        if not dynamo_items:
-            logger.error("Error creating items for DynamoDB upload.")
-            return {"statusCode": 400, "body": "No valid items to upload"}
-        upload_to_dynamodb(dynamo_items)
-        return {"statusCode": 200, "body": "Data processed and uploaded successfully"}
+
     except Exception as e:
         logger.error(f"Error processing event: {e}")
-        return {"statusCode": 500, "body": "Internal server error"}
+        return {"status": "error", "message": f"Internal server error: {str(e)}"}

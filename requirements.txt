@@ -9,4 +9,6 @@ requests
 bs4
 feedparser
 atproto
+pandas
+streamlit
 logging

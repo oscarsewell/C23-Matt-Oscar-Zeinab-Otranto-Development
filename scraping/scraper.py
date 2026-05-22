@@ -104,7 +104,7 @@ def extract_author(soup: BeautifulSoup, source: str) -> list[str]:
 def extract_publish_date(soup: BeautifulSoup, source: str) -> str | None:
     """Extracts the publish date of an article from a BeautifulSoup object based on the source"""
     if source == "BBC News":
-        timestamp = soup.find("time", attrs={"data-testid": "timestamp"})
+        timestamp = soup.find("time", attrs={"datetime": True})
 
         if timestamp:
             return timestamp.get("datetime")
@@ -158,7 +158,7 @@ def scrape_article(url: str) -> dict:
         "description": extract_description(soup),
         "authors": extract_author(soup, source),
         "published_at": extract_publish_date(soup, source),
-        "body_text": extract_body_text(soup),
+        "body": extract_body_text(soup),
         "source": source,
         "url": url,
     }
