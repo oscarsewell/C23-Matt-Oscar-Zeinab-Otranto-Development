@@ -1,16 +1,43 @@
 # Otranto Development News Feed Project
 
-## Environment Variables Template
+An automated AI-powered media intelligence platform built using AWS, Docker, Terraform, and Streamlit.
 
-run ```cp .env.example .env``` and then fill in the values locally
+The system ingests RSS feeds, scrapes news articles, enriches them using AI analysis, stores structured data in DynamoDB, visualises insights through a dashboard, and generates automated social media posts.
 
+## Features
 
-## Scraper
+- RSS feed ingestion
+- Article scraping
+- AI sentiment analysis
+- Keyword and entity extraction
+- DynamoDB storage
+- Streamlit analytics dashboard
+- Automated BlueSky posting
+- Dockerised services
+- Terraform infrastructure
 
-Pass list of strings of urls to scrape_articles()
+## Project Structure
 
-Input: List of strings (links to pages to scrape)
-Output: List of dictionaries
+```
+text
+dashboard/
+enrichment/
+rss-extraction/
+scraping/
+social-posting/
+Terraform/
+tests/
+```
+
+## Project Structure
+
+Run "cp .env.example .env"
+Fill in the required environment variables locally
+
+## Documentation
+
+Each service contains it's own README with detailed setup and usage instructions.
+
 
 ## DynamoDB
 
@@ -26,14 +53,14 @@ Output: List of dictionaries
 
 - Optional Attributes:
     Consisting of:
-        "sentiment_score": decimal type
-        "sentiment_classification": string type
-        "justification": string type
-        "keywords": [string types]
-        "article_title": string
-        "article_url": string
-        "authors": [string types]
-        "published_at": string
+        "sentiment_score"
+        "sentiment_classification"
+        "justification"
+        "keywords"
+        "article_title"
+        "article_url"
+        "authors"
+        "published_at"
 
 Querying in this schema:
 - This schema allows for queries specifying subject_name and range of dates. 
