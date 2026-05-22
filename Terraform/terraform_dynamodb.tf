@@ -1,6 +1,6 @@
 resource "aws_dynamodb_table" "c23-smearbot-enriched-data-dynamodb-table" {
   name           = var.dynamodb_table_name
-  billing_mode   = "PayPerRequest"
+  billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "subject_name"
   range_key      = "published_at_article_url"
   stream_enabled = true
@@ -19,11 +19,4 @@ resource "aws_dynamodb_table" "c23-smearbot-enriched-data-dynamodb-table" {
   tags = {
     Name        = var.dynamodb_table_name
   }
-}
-
-
-
-resource "aws_dynamodb_resource_policy" "c23-smearbot-dynamodb-table-policy" {
-  resource_arn = aws_dynamodb_table.c23-smearbot-enriched-data-dynamodb-table.arn
-  policy       = data.aws_iam_policy_document.test.json
 }
