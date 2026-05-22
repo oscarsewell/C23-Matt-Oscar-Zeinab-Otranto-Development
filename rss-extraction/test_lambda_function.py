@@ -35,11 +35,9 @@ class TestLambdaHandler:
 
         response = lambda_handler(event, None)
 
-        assert response['statusCode'] == 200
-        body = json.loads(response['body'])
-        assert 'new_urls' in body
-        assert body['total_new_urls'] == 1
-        assert body['feeds_processed'] == 1
+        assert response['new_urls'] == ['http://example.com/story1']
+        assert response['total_new_urls'] == 1
+        assert response['feeds_processed'] == 1
 
     @patch('lambda_function.update_cached_urls')
     @patch('lambda_function.get_new_urls')
@@ -70,10 +68,8 @@ class TestLambdaHandler:
 
         response = lambda_handler(event, None)
 
-        assert response['statusCode'] == 200
-        body = json.loads(response['body'])
-        assert body['feeds_processed'] == 2
-        assert body['total_new_urls'] == 3
+        assert response['feeds_processed'] == 2
+        assert response['total_new_urls'] == 3
 
     def test_handler_missing_feed_urls(self):
         """Test handler with missing feed_urls field"""
@@ -82,9 +78,8 @@ class TestLambdaHandler:
         response = lambda_handler(event, None)
 
         assert response['statusCode'] == 400
-        body = json.loads(response['body'])
-        assert 'error' in body
-        assert 'feed_urls' in body['error']
+        assert 'error' in response
+        assert 'feed_urls' in response['error']
 
     def test_handler_empty_feed_urls(self):
         """Test handler with empty feed_urls list"""
@@ -93,8 +88,7 @@ class TestLambdaHandler:
         response = lambda_handler(event, None)
 
         assert response['statusCode'] == 400
-        body = json.loads(response['body'])
-        assert 'error' in body
+        assert 'error' in response
 
     def test_handler_invalid_feed_urls_type_string(self):
         """Test handler with feed_urls as string instead of list"""
@@ -103,8 +97,7 @@ class TestLambdaHandler:
         response = lambda_handler(event, None)
 
         assert response['statusCode'] == 400
-        body = json.loads(response['body'])
-        assert 'error' in body
+        assert 'error' in response
 
     def test_handler_invalid_feed_urls_type_int(self):
         """Test handler with feed_urls as integer"""
@@ -156,10 +149,8 @@ class TestLambdaHandler:
 
         response = lambda_handler(event, None)
 
-        assert response['statusCode'] == 200
-        body = json.loads(response['body'])
-        assert body['feeds_processed'] == 1
-        assert body['total_new_urls'] == 1
+        assert response['feeds_processed'] == 1
+        assert response['total_new_urls'] == 1
 
     @patch('lambda_function.update_cached_urls')
     @patch('lambda_function.get_new_urls')
@@ -191,9 +182,7 @@ class TestLambdaHandler:
 
         response = lambda_handler(event, None)
 
-        assert response['statusCode'] == 200
-        body = json.loads(response['body'])
-        assert body['total_new_urls'] == 1
+        assert response['total_new_urls'] == 1
 
     @patch('lambda_function.update_cached_urls')
     @patch('lambda_function.get_new_urls')
@@ -213,10 +202,8 @@ class TestLambdaHandler:
 
         response = lambda_handler(event, None)
 
-        assert response['statusCode'] == 200
-        body = json.loads(response['body'])
-        assert body['total_new_urls'] == 0
-        assert body['new_urls'] == []
+        assert response['total_new_urls'] == 0
+        assert response['new_urls'] == []
 
 
 class TestResponseHelpers:
@@ -228,24 +215,18 @@ class TestResponseHelpers:
 
         response = success_response(body)
 
-        assert response['statusCode'] == 200
-        assert response['headers']['Content-Type'] == 'application/json'
-        parsed = json.loads(response['body'])
-        assert parsed == body
+        assert response == body
 
     def test_error_response(self):
         """Test error response formatting"""
         response = error_response(404, 'Not found')
 
         assert response['statusCode'] == 404
-        assert response['headers']['Content-Type'] == 'application/json'
-        parsed = json.loads(response['body'])
-        assert parsed['error'] == 'Not found'
+        assert response['error'] == 'Not found'
 
     def test_error_response_500(self):
         """Test error response with 500 status"""
         response = error_response(500, 'Internal server error')
 
         assert response['statusCode'] == 500
-        parsed = json.loads(response['body'])
-        assert 'error' in parsed
+        assert 'error' in response
