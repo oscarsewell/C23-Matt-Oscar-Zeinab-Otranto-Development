@@ -13,9 +13,11 @@ CACHING_BUCKET = os.getenv('S3_CACHING_BUCKET', 'c23-smearbot-caching-bucket')
 
 
 def lambda_handler(event, context):
+    logger.info("Starting scraping Lambda")
     urls = event.get("urls", [])
 
     if not urls:
+        logger.warning("No URLs provided")
         return {
             "s3_bucket": CACHING_BUCKET,
             "s3_key": None,
@@ -24,6 +26,7 @@ def lambda_handler(event, context):
         }
 
     articles = scrape_articles(urls)
+    logger.info("Scraping Lambda completed")
 
     if not articles:
         return {
