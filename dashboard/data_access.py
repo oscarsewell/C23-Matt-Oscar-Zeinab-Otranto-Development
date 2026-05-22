@@ -3,7 +3,7 @@ import os
 
 
 def get_dynamodb_table():
-    table_name = os.getenv("DYNAMODB_TABLE_NAME")
+    table_name = os.getenv("DYNAMODB_TABLE")
     region = os.getenv("AWS_REGION", "eu-west-2")
     dynamodb = boto3.resource("dynamodb", region_name=region)
 
