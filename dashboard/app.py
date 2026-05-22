@@ -1,3 +1,4 @@
+"""Create a Streamlit dashboard to display article insights and metrics."""
 import streamlit as st
 import pandas as pd
 
