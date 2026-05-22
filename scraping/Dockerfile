@@ -1,9 +1,9 @@
 FROM public.ecr.aws/lambda/python:3.14
 
-COPY requirements.txt ${LAMBDA_TASK_ROOT}
+COPY requirements.txt ${LAMBDA_TASK_ROOT}/
 
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/requirements.txt
 
-COPY . ${LAMBDA_TASK_ROOT}/scraping
+COPY lambda_function.py scraper.py ${LAMBDA_TASK_ROOT}/
 
-CMD ["scraping.lambda_function.lambda_handler"]
+CMD ["lambda_function.lambda_handler"]

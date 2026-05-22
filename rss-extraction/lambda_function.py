@@ -90,21 +90,12 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 
 def success_response(body: Dict[str, Any]) -> Dict[str, Any]:
     """Format and return a successful Lambda response"""
-    return {
-        "statusCode": 200,
-        "body": json.dumps(body),
-        "headers": {
-            "Content-Type": "application/json"
-        }
-    }
+    return body
 
 
 def error_response(status_code: int, message: str) -> Dict[str, Any]:
     """Format and return an error Lambda response"""
     return {
-        "statusCode": status_code,
-        "body": json.dumps({"error": message}),
-        "headers": {
-            "Content-Type": "application/json"
-        }
+        "error": message,
+        "statusCode": status_code
     }
