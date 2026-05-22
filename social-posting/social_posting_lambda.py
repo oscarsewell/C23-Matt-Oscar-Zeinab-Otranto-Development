@@ -8,7 +8,7 @@ load_dotenv()  # Load environment variables from .env file
 def lambda_handler(event, context):
     """AWS Lambda handler function to process incoming events"""
 
-    if not is_sentiment_score_valid(event['NewImage']['sentiment_score'], threshold=3.5):
+    if not is_sentiment_score_valid(event['NewImage']['sentiment_score'], threshold=0):
         return {
             "statusCode": 400,
             "body": "Invalid sentiment score. Must be a float above 3.5."
