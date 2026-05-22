@@ -1,11 +1,20 @@
 import atproto
+import logging
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 def login_to_bluesky(b_sky_username: str, b_sky_password: str) -> atproto.Client:
-    client = atproto.Client()
-    # TODO: Use app password instead of main password
-    client.login(b_sky_username, b_sky_password)
-    return client
+    logger.info("Logging into BlueSky with provided credentials.")
+    try:
+        client = atproto.Client()
+        client.login(b_sky_username, b_sky_password)
+        logger.info("Successfully logged into BlueSky.")
+        return client
+    except Exception as e:
+        logger.error(f"Failed to log into BlueSky: {e}")
+        raise
 
 
 def post_to_bluesky(client: atproto.Client, content: str) -> None:

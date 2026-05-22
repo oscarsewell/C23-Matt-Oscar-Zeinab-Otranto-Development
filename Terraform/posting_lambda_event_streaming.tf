@@ -106,3 +106,12 @@ resource "aws_iam_role_policy" "lambda_policy" {
   })
 }
 
+resource "aws_cloudwatch_log_group" "bluesky_poster_logs"{
+    
+  name              = "/aws/lambda/bluesky-poster-lambda"
+  retention_in_days = 14  # Adjust as needed (7, 14, 30, 90, etc.)
+
+  tags = {
+    Name = "bluesky-poster-lambda-logs"
+  }
+}
