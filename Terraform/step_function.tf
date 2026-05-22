@@ -53,7 +53,9 @@ resource "aws_sfn_state_machine" "c23_smearbot_step_function" {
           Payload = {
             feed_urls = [
               "https://feeds.bbci.co.uk/news/rss.xml",
-              "https://www.theguardian.com/world/rss"
+              "https://www.theguardian.com/world/rss",
+              "https://feeds.bbci.co.uk/news/politics/rss.xml",
+              "https://www.theguardian.com/us-news/us-politics/rss"
             ]
           }
         }
