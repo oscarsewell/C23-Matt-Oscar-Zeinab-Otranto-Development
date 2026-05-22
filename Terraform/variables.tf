@@ -32,7 +32,7 @@ variable "blue_sky_poster_repo_name" {
 variable "blue_sky_lambda_function_name" {
   description = "Name of the Blue Sky poster Lambda function."
   type        = string
-  default     = "bluesky-poster-lambda"
+  default     = "c23-smearbot-blue-sky-poster"
 }
 
 variable "article_scraping_repo_name" {

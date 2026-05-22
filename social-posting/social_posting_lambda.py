@@ -10,10 +10,12 @@ logging.basicConfig(level=logging.INFO)
 
 def lambda_handler(event, context):
     """AWS Lambda handler function to process incoming events"""
+
     logger.info(f"Received event: {event}")
     if not is_sentiment_score_valid(event['NewImage']['sentiment_score'], threshold=0):
         logger.info(
             f"Sentiment score too low, skipping post creation. score: {event['NewImage']['sentiment_score']}")
+
         return {
             "statusCode": 400,
             "body": "Invalid sentiment score. Must be a float above 3.5."
