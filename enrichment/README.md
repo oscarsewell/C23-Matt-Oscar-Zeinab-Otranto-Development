@@ -14,7 +14,7 @@ This program is to enrich text data parsed through a web scraper using OpenAI AP
 
 Build the image:
 ```bash
-docker buildx build -t cc23-smearbot-data-enrichment:latest --provenance=false --platform="linux/amd64" .
+docker buildx build -t c23-smearbot-data-enrichment:latest --provenance=false --platform="linux/amd64" .
 ```
 
 Tag and push to ECR:
