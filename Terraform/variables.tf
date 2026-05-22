@@ -1,9 +1,3 @@
-## Will need referencing the Step Function ARN from the Step Function Terraform module
-variable "step_function_arn" {
-  description = "ARN of the Step Function state machine to trigger."
-  type        = string
-}
-
 variable "scheduler_name" {
   description = "Name of the EventBridge Scheduler schedule."
   type        = string
