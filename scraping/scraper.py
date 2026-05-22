@@ -65,20 +65,28 @@ def extract_author(soup: BeautifulSoup, source: str) -> list[str]:
     """Extracts the author(s) of an article from a BeautifulSoup object based on the source"""
 
     if source == "BBC News":
+
         byline = soup.find(
             "div",
-            attrs={"data-testid": "single-byline"}
+            attrs={
+                "data-testid": lambda value:
+                    value in ["single-byline", "multi-byline"]
+            }
         )
 
         if byline:
 
-            spans = byline.find_all("span")
+            spans = byline.find_all(
+                "span",
+                class_=lambda value:
+                    value and "TextContributorName" in value
+            )
 
-            for span in spans:
-                text = span.get_text(strip=True)
-
-                if (text and text.lower() != "by" and "reporter" not in text.lower()):
-                    return [text]
+            return [
+                author.get_text(strip=True)
+                for author in spans
+                if author.get_text(strip=True)
+            ]
 
     elif source == "The Guardian":
         authors = soup.find_all("a", rel="author")
